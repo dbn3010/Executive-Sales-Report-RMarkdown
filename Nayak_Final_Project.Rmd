@@ -1,0 +1,447 @@
+---
+title: ''
+author: ''
+date: ''
+output:
+  html_document:
+    code_folding: show
+  word_document: default
+---
+<!-- TITLE -->
+
+<p><center><font size=6, color="#3750B3"><b>ALY6000-70592 Introduction to Analytics</font>
+<br><font size=6, color="#F5290A">Northeastern University</font></b>
+<p><font size=5>Professor: Dr. Dee Chiluiza
+<br>Student: Durga Bhanu Nayak
+<br>Date: `r format(Sys.Date(), "%d %B, %Y")`
+<br><b><font size=6, color="#116E5E">Executive analysis on Company Sales Report</font></b>
+</center><br>
+
+
+<P><FONT SIZE=5, COLOR="#17139B"><B>INTRODUCTION</B></FONT><BR><P>
+<FONT SIZE=3>
+
+<p>Retail industry is one among the core industries which involves the process of selling consumable goods to the purchaser and generating revenue out of this process. It involves both online and offline market for the business. In this digital world, as the businesses are growing, so do the data. Several strategies are not being implemented to maximize the output such as market analysis, customer analysis, production and distribution channels reviews etc. Part of data collection, transaction data is very crucial for companies involved in this industry to analyze it and use the gained insights for their benefits in business growth <i>(References: Kimberly, 2020).</i>
+
+<p>Retail data analytics is now a driving force in this industry by collecting and analyzing the sales data to uncover hidden patterns and trends to gain more insights about the performance of specific department, stores, customers and vendors. By performing effective analysis, we can use to insights to improve and optimize pricing, help retaining customer loyalty by addressing their needs timely, by recommending products of their interests based on their purchase history to keep them attracted and also to implement new solutions where existing process is lacking.<i>(Referenced from Ron, 2019 and Alexandra, 2021)</i>
+
+<p>As a sales analyst, I will be analyzing the available data set <mark>Project6Data.xlsx</mark> which lists the details about the global sales history of consumer, corporate and home office products for the year 2020. This data contains categorical variables such as product names, its department and division, global market and regions etc. It also incorporates numerical variables as total sales, product price, discount, losses, profits etc. This data set holds <i>1000</i> sales records corresponding to <i>27</i> variables.
+
+<p>Through the available data set, we would be trying to look through the major loss and profit points in across multiple divisions. For this, we will be using R to analyze the data set and plot the figures accordingly to summarize our study.
+
+<BR><P><FONT SIZE=5, COLOR="#17139B"><B>DETAILED ANALYSIS</B></FONT><BR><P>
+```{r message=FALSE, warning=FALSE}
+# importing required libraries
+library(dplyr)
+library(RColorBrewer)
+library(knitr)
+library(readxl)
+library(kableExtra)
+library(ggplot2)
+library(reshape2)
+
+# importing data set
+sales2020 <- read_xlsx("DataSets/Project6Data.xlsx")
+```
+
+<P><BR><B><FONT SIZE=4, COLOR="#982855">Task 1</FONT></B><BR>
+<FONT SIZE=3><I>
+Finding the basic descriptive statistics of Total sales, shipping cost, total loss, net sale and profits.</I>
+
+```{r}
+# calculating the descriptive statistics
+Tmean <- mean(sales2020$Sales_Total)
+Tstdev <- sd(sales2020$Sales_Total)
+Tmax <- max(sales2020$Sales_Total)
+Tmin <- min(sales2020$Sales_Total)
+Tmed <- median(sales2020$Sales_Total)
+Trange <- Tmax-Tmin
+Smean <- mean(sales2020$ShippingCost_Product)
+Sstdev <- sd(sales2020$ShippingCost_Product)
+Smax <- max(sales2020$ShippingCost_Product)
+Smin <- min(sales2020$ShippingCost_Product)
+Smed <- median(sales2020$ShippingCost_Product)
+Srange <- Smax-Smin
+Lmean <- mean(sales2020$Total_loss)
+Lstdev <- sd(sales2020$Total_loss)
+Lmax <- max(sales2020$Total_loss)
+Lmin <- min(sales2020$Total_loss)
+Lmed <- median(sales2020$Total_loss)
+Lrange <- Lmax-Lmin
+Nmean <- mean(sales2020$Net_Sale)
+Nstdev <- sd(sales2020$Net_Sale)
+Nmax <- max(sales2020$Net_Sale)
+Nmin <- min(sales2020$Net_Sale)
+Nmed <- median(sales2020$Net_Sale)
+Nrange <- Nmax-Nmin
+Pmean <- mean(sales2020$Profits)
+Pstdev <- sd(sales2020$Profits)
+Pmax <- max(sales2020$Profits)
+Pmin <- min(sales2020$Profits)
+Pmed <- median(sales2020$Profits)
+Prange <- Pmax-Pmin
+vec <- c(Tmean,Smean,Lmean,Nmean,Pmean,Tstdev,Sstdev,Lstdev,Nstdev,Pstdev,Tmed,Smed,Lmed,Nmed,Pmed,Trange,Srange,Lrange,Nrange,Prange)
+colnm <- c("Total Sales","Shipping Cost","Total Loss","Net Sales","Profit")
+rownm <- c("Mean","Std Dev","Median","Range")
+
+# creating matrix
+descSts <- matrix(vec,nrow = length(rownm),ncol = length(colnm),byrow = TRUE, dimnames = list(rownm,colnm))
+kable(round(descSts,2), "html",caption = "<center>Table1: Basic statistics for Numerical variables") %>%
+  kable_styling("striped", font_size = 14)
+
+```
+<font size=2><i> &#42; Styling References: Hao Zhu, 2021</i><font>
+
+<P><BR><B><FONT SIZE=3, color="#378A0E">Observation:</FONT></B><P>
+<FONT SIZE=3>
+
+- Average profit can be seen as close to as 47 percent of the average net sales recorded.<p>
+- Average total loss can be found as 26 percent of the average total sales recorded.<p>
+- Around 68 percent of data points for Profits lies in the range of ``r round(Pmean-Pstdev,2)`` USD to ``r round(Pmean+Pstdev,2)`` USD.<p>
+- Average shipping cost can be seen as ``r round(Smean,2)`` USD.<p>
+</FONT>
+
+<P><BR><B><FONT SIZE=4, COLOR="#982855">Task 2</FONT></B><BR>
+<FONT SIZE=3><I>
+Study of numerical variables</I>
+
+<BR><B><FONT SIZE=4, COLOR="#982855">2.1</FONT></B>
+<FONT SIZE=3><I>
+Comparing Profit data using box plot and histogram.</I>
+
+```{r}
+par(mfcol = c(2,1))
+
+boxplot(sales2020$Profits, horizontal = T,col = "#55B0E5",main="Plot1: Profit representation of sales data")
+
+hist(sales2020$Profits, breaks = 80, main = "",col = "#55B0E5", xlab = "Profits in USD")
+    
+```
+
+<P><BR><B><FONT SIZE=3, color="#378A0E">Observation:</FONT></B><P>
+<FONT SIZE=3>
+
+- Europe market is recording the highest profits in sales which crosses the amount of 6000 USD.<p>
+- Most of the profit amount lies in between 0 to 2000 USD.<p>
+- Peak profit frequency is around 800 USD.<p>
+- Few profit values can be seen in negative values.<p>
+- The above distribution is positively skewed.<p>
+</FONT>
+
+<BR><B><FONT SIZE=4, COLOR="#982855">2.2</FONT></B>
+<FONT SIZE=3><I>
+Comparing Shipping cost data using box plot and histogram.</I>
+
+```{r}
+par(mfcol = c(2,1))
+
+boxplot(sales2020$ShippingCost_Product, horizontal = T,col = "#E5B555",main="Plot2: Shipping Cost data representation")
+
+hist(sales2020$ShippingCost_Product, breaks = 80, main = "",col = "#E5B555", xlab = "Shipping Cost in USD")
+```
+<P><BR><B><FONT SIZE=3, color="#378A0E">Observation:</FONT></B><P>
+<FONT SIZE=3>
+
+- It seems that most of the product's sipping costs lies around 40 USD.<p>
+- Few products are also being shipped with no or minimal shipping charges as their data points are close to 0 USD.<p>
+- From the data, it is found that USCA market is having the highest shipping cost among other markets reaching about 80 USD for each items.<p>
+- Outliers can be found on both positive and negative sides which implies that most of the data points are lying in the middle between 34 to 46 USD.<p>
+</FONT>
+
+<BR><B><FONT SIZE=4, COLOR="#982855">2.3</FONT></B>
+<FONT SIZE=3><I>
+Comparing loss data using box plot and histogram.</I>
+
+```{r}
+par(mfcol = c(2,1))
+
+boxplot(sales2020$Total_loss, horizontal = T,col = "#9A8F99",main="Plot3: Total Loss incurred to company")
+
+hist(sales2020$Total_loss, breaks = 80, main = "",col = "#9A8F99", xlab = "Total Losses in USD")
+```
+<P><BR><B><FONT SIZE=3, color="#378A0E">Observation:</FONT></B><P>
+<FONT SIZE=3>
+
+- Highest loss has been experienced from phone sales in Latin American market with value as 11,527.92 USD.<p>
+- Maximum number of losses are recorded below 2000 USD.<p>
+- Appliances and electronic products are facing high losses in returns.<p>
+- The above distribution of total losses is positively skewed.<p>
+- Outlier values can be seen pas 2700 USD mark.<p>
+</FONT>
+
+<BR><B><FONT SIZE=4, COLOR="#982855">2.4</FONT></B>
+<FONT SIZE=3><I>
+Comparing net sales data using box plot and histogram.</I>
+
+```{r}
+par(mfcol = c(2,1))
+
+boxplot(sales2020$Net_Sale, horizontal = T,col = "#13E929",main="Plot4: Net Sales recorded in 2020")
+
+hist(sales2020$Net_Sale, breaks = 45, main = "",col = "#13E929", xlab = "Net Sales in USD")
+```
+<P><BR><B><FONT SIZE=3, color="#378A0E">Observation:</FONT></B><P>
+<FONT SIZE=3>
+
+- Most of the net sales values are under 5000 USD.<p>
+- Highest net sale is recorded for Samsung cordless smartphone.<p>
+- It can also be observed that peak frequency of net sales are around 2000 USD.<p>
+- This distribution is skewed positively.<p>
+- Outliers can be seen above the value of 5400 USD.<p>
+</FONT>
+
+
+
+<P><BR><B><FONT SIZE=4, COLOR="#982855">Task 3</FONT></B><BR>
+<FONT SIZE=3><I>
+Frequency chart presentations</I>
+
+<BR><B><FONT SIZE=4, COLOR="#982855">3.1</FONT></B>
+<FONT SIZE=3><I>
+Plotting the global market frequency using bar graph.</I>
+
+```{r}
+tbl_Mkt <- table(sales2020$Market)
+
+plot5 = barplot(tbl_Mkt,ylim = c(0,50+max(tbl_Mkt)), col = brewer.pal(5,"Accent"), las=1, 
+                main = "Plot5: Global Market Frequency for year 2020", xlab = "Market")
+
+text(x=plot5,y=tbl_Mkt,label=tbl_Mkt,pos=3,cex=0.8)
+```
+<P><BR><B><FONT SIZE=3, color="#378A0E">Observation:</FONT></B><P>
+<FONT SIZE=3>
+
+- African market is having the lowest sales recorded as 62 records.<P>
+- Asia Pacific is having the highest sales recorded which is 302 records.<P>
+- Latin America, Europe and Asia Pacific are among the markets that are having sales records more than 200.<P>
+</FONT>
+
+<BR><B><FONT SIZE=4, COLOR="#982855">3.2</FONT></B>
+<FONT SIZE=3><I>
+Plotting the Division frequency using bar graph.</I>
+
+```{r}
+par(mar =c(4,5,1,1))
+tbl_Dvsn <- table(sales2020$Division)
+ord_dvsn <- tbl_Dvsn[order(tbl_Dvsn,decreasing = F)]
+
+plt6 = barplot(ord_dvsn,horiz = T,xlim = c(0,50+max(ord_dvsn)), col = brewer.pal(8,"Accent"), las=1, cex.names = 0.8,
+               main = "Plot6: Product Division frequency chart", xlab = "Frequency")
+
+text(y=plt6,x=ord_dvsn,label=ord_dvsn,pos=4,cex=0.8)
+
+```
+<P><BR><B><FONT SIZE=3, color="#378A0E">Observation:</FONT></B><P>
+<FONT SIZE=3>
+
+- Chairs can be seen as the highest sales division with 123 sales records.<P>
+- Fasteners are among the office supplies which are having the least sales records.<P>
+- Divisions including Storage, Phones, Bookcases, Copiers and Chairs are having considerable sales than rest of the divisions.<P>
+- Office supplies that comes into Supplies, Envelopes, Labels and Fasteners are having low sale records.<P>
+</FONT>
+
+
+<BR><B><FONT SIZE=4, COLOR="#982855">3.3</FONT></B>
+<FONT SIZE=3><I>
+Plotting the Department sales frequency using pie chart.</I>
+
+```{r}
+tbl_Dept <- table(sales2020$Department)
+
+plt7 = pie(tbl_Dept,labels = tbl_Dept,col = brewer.pal(3,"Dark2"), main = "Plot7: Each Department sales in 2020")
+
+legend("topleft",names(tbl_Dept),border = "black",fill = brewer.pal(3,"Dark2"))
+```
+<P><BR><B><FONT SIZE=3, color="#378A0E">Observation:</FONT></B><P>
+<FONT SIZE=3>
+
+- All the three departments are having close sales records.<P>
+- Technology department is having the highest sales of 355 sale records.<P>
+- Office supplies is having the least sales with 309 records.<P>
+</FONT>
+
+
+<BR><B><FONT SIZE=4, COLOR="#982855">3.4</FONT></B>
+<FONT SIZE=3><I>
+Plotting the different segment sales frequency using pie chart.</I>
+
+```{r}
+tbl_Op <- table(sales2020$Segment)
+
+plt8 = pie(tbl_Op,labels = tbl_Op,col = brewer.pal(4,"Set3"),main = "Plot8: Sales frequency of each segment in 2020")
+
+legend("topleft",names(tbl_Op),border = "black",fill = brewer.pal(4,"Set3"))
+
+```
+<P><BR><B><FONT SIZE=3, color="#378A0E">Observation:</FONT></B><P>
+<FONT SIZE=3>
+
+- Most of the products has be sold for consumers needs with sales records for 2020 listed as 553 which is more than 50 percentage of the total sales.<P>
+- Home office products sales is the least one with 155 sales records. Considering the ongoing trend of work from home fashion, its sales might increase in upcoming years.<P>
+</FONT>
+
+
+<P><BR><B><FONT SIZE=4, COLOR="#982855">Task 4</FONT></B><BR>
+<BR><B><FONT SIZE=4, COLOR="#982855">4.1</FONT></B>
+<FONT SIZE=3><I>What are the profits for each global market for the year 2020 ?.</I>
+
+```{r}
+par(mai = c(1,1.5,0.4,0.5))
+plt9 = boxplot(sales2020$Profits~sales2020$Market,horizontal = T,las=1,ylab="",cex.names=0.7 ,col = brewer.pal(5, "Paired"),
+               main = "Plot9: Profits corresponding to each Market in 2020", xlab = "Profits in USD")
+nsavg <- tapply(sales2020$Profits, sales2020$Market, mean)
+
+points(x=nsavg, y=c(1,2,3,4,5), pch=18, col = "red")
+
+```
+<font size=2><i> &#42; Tapply References: Datacamp</i><font>
+
+<P><BR><B><FONT SIZE=3, color="#378A0E">Observation:</FONT></B><P>
+<FONT SIZE=3>
+
+- Comparing the five markets, USCA is having the least median value for profit points among all the markets.<P>
+- Europe's profit distribution can be seen as the highest among all the markets.<P>
+- Average profit of Asia Pacific and Latin America is close to each other.<P>
+- Europe market also records the highest profit values among all with three profit points more than 6000 USD.<P>
+</FONT>
+
+
+<BR><B><FONT SIZE=4, COLOR="#982855">4.2</FONT></B>
+<FONT SIZE=3><I>What are the total losses recorded corresponding to each Division ?.</I>
+
+```{r}
+par(mai = c(1,1,0.4,0.4))
+Tloss <-  tapply(sales2020$Total_loss, sales2020$Division, sum)
+SALoss <- Tloss[order(Tloss,decreasing = FALSE)]
+plt10 = barplot(SALoss, horiz = T,las=1,cex.names = 0.8,xlim = c(0,30000+max(SALoss)), col = hsv(0.7, seq(0,0.8,length.out = 17), 1),
+                main = "Plot10: Total losses across each Division recorded in year 2020", xlab = "Loss in USD")
+text(SALoss,plt10,round(SALoss,2),cex = 0.7,pos=4)
+```
+
+<P><BR><B><FONT SIZE=3, color="#378A0E">Observation:</FONT></B><P>
+<FONT SIZE=3>
+
+- Highest loss can be seen for Chairs recorded all over the globe.
+- Office supplies like Labels and Fasteners can be seen with the least loss amount.
+- Furniture and Technological products can be seen to have experienced the losses more than others.
+</FONT>
+
+<BR><B><FONT SIZE=4, COLOR="#982855">4.3</FONT></B>
+<FONT SIZE=3><I>What are the average net sales across each department ?.</I>
+
+```{r message=FALSE, warning=FALSE}
+NSMean = tapply(sales2020$Net_Sale, sales2020$Department, mean)
+
+plt11 = dotchart(NSMean, main = "Plot11: Average Net sales for each Department", xlab = "Sales in USD")
+
+```
+
+<P><BR><B><FONT SIZE=3, color="#378A0E">Observation:</FONT></B><P>
+<FONT SIZE=3>
+
+- Across all the department, Furniture is having the highest average net sales with ``r round(max(NSMean),2)`` USD.
+- Compared to that, Office supplies is having the lowest net sales among all the department with value as ``r round(min(NSMean),2)`` USD
+- Both Technology and Furniture are having considerable high net sales despite of all the losses.
+</FONT>
+
+
+<P><BR><B><FONT SIZE=4, COLOR="#982855">Task 5</FONT></B><BR>
+<FONT SIZE=3><I>
+From the region of Western US, what was the average shipping cost across each segment ? </I>
+
+```{r}
+par(mai = c(0.9,1,0.4,0.4))
+WSsales <- filter(sales2020,sales2020$Region == "Western US")
+
+scost <- tapply(WSsales$ShippingCost_Product, WSsales$Segment, mean)
+
+kable(round(scost,2), caption = "<center>Table 2: Average Shipping cost across each Segment for Western US market in year 2020", "html", col.names = "Shipping Cost in USD") %>%
+  kable_styling("striped", font_size = 14)
+
+plt12 = barplot(scost,las=1, col = brewer.pal(3, "Spectral"), ylim = c(0,5+max(scost)),
+                main = "Plot12: Average Shipping Cost per segment in Western US region\n for year 2020", xlab = "Segment", ylab = "Shipping Cost in USD")
+text(x=plt12, y=scost, labels = round(scost,2),pos = 3, cex = 0.8)
+
+```
+
+
+<P><BR><B><FONT SIZE=3, color="#378A0E">Observation:</FONT></B><P>
+<FONT SIZE=3>
+
+- Products under Home office segment is having the least average shipping cost of ``r round(min(scost),2)`` USD in Western US region.<P>
+- Corporate segment products are having the highest average shipping cost of ``r round(max(scost),2)`` USD<P>
+- Consumer and corporate products are having relatively higher shipping cost than products from home office segment.<P>
+</FONT>
+
+
+<P><BR><B><FONT SIZE=4, COLOR="#982855">Task 6</FONT></B><BR>
+<FONT SIZE=3><I>
+Why was the average profit in USCA market was lower than African market despite having higher sales record? </I>
+
+```{r}
+sale_usca <- filter(sales2020, sales2020$Market == "USCA")
+
+sale_africa <- filter(sales2020, sales2020$Market == "Africa")
+
+sa_avg_prof <- tapply(sale_africa$Profits, sale_africa$Department, mean)
+su_avg_prof <- tapply(sale_usca$Profits, sale_usca$Department, mean)
+
+par(mfrow = c(2,2))
+
+p1 = barplot(tbl_Mkt,ylim = c(0,50+max(tbl_Mkt)), col = brewer.pal(5,"Accent"), las=2, 
+                main = "", xlab = "Market", cex.names = 0.7)
+
+p2 = boxplot(sales2020$Profits~sales2020$Market,horizontal = T,las=1,ylab="",cex.names=0.7 ,col = brewer.pal(5, "Paired"),
+               main = "", xlab = "Profits in USD")
+nsavg <- tapply(sales2020$Profits, sales2020$Market, mean)
+points(x=nsavg, y=c(1,2,3,4,5), pch=18, col = "red")
+
+p3 = barplot(sa_avg_prof, ylim = c(0,200+max(sa_avg_prof)), col = "#577BB0", las=1, xlab = "Department",cex.names = 0.8)
+
+p4 = barplot(su_avg_prof, ylim = c(0,200+max(su_avg_prof)), col = "#89CA68", las=1, xlab = "Department",cex.names = 0.8)
+mtext("Plot13:Average Profit comparison between African and USCA market", side = 3, line = -3, outer = T,font = 3, cex = 1)
+```
+
+<P><BR><B><FONT SIZE=3, color="#378A0E">Observation:</FONT></B><P>
+<FONT SIZE=3>
+
+- Overall sales frequency in African market was lower than USCA market.<P>
+- Profit spread in USCA market was lesser than that of African market.<P>
+- Most of the profits are lower in value in USCA market than African market.<P>
+- Most of the African market profit comes from Office supplies department which is comparably higher than the profits from office supplies in USCA market.<P>
+- Other department profits are relatively closer in both the markets.
+</FONT>
+
+
+
+<P><BR><FONT SIZE=5, COLOR="#17139B"><B>CONCLUSION</B></FONT><BR><P>
+
+- From the above analysis, we have analyzed and presented the basic descriptive statistics including the mean, median, standard deviation and range of the given numerical variables.
+- We also presented the sales frequency of different global markets where we got to know that Asia Pacific was having the highest sales records compared to Africa which was having the lowest sales records.<P>
+- Bar chart and pie chart are commonly being used for presenting the categorical variable frequencies. However, it is comparatively difficult to analyze the difference in pie chart if labels are not present.<P>
+- Comparing the box plot and histogram, provides a better visual explanations as how the data spread is happening for numerical variables.<P>
+- From plot 6, we got to know that sales records for furniture products is comparably higher than other departments across the globe whereas office supplies are among the least sold products.<P>
+- As per the plot 8, home office products are having least sales, however, considering the COVID-19 pandemic situation, subsequent year sales data might see increase in this segment due to work from home norm.<P>
+- Box plots are considered to be the best graph to represent the value distribution among the categorical variables. From Plot 9, we can see the profit distribution across each global market with their value percentages comparison.<P>
+- From plot 10, we have gained the knowledge about which product division is experiencing the most and the least losses which is happening as a result of return of the defective products.<P>
+- Plot 12 provides us the idea of which product segment is having the highest and the lowest shipping cost in Western US region. In this case, corporate segment is having the highest shipping cost compared to the home office products which are the least ones.<P>
+- After analyzing the above data, we have found that even though sales records are higher in USCA market than African market, its average profit value is lower than that of African market. Upon exploring more, we can see that average profit of office supplies department is much higher than average profits from office supplies in USCA market.<P>
+- It can be noted that, as most of the losses are recorded for the furniture items, users must have returned these products as they have found some defects in it which could have happened considering several reasons like poor quality materials or bad shipping and handling of products.<P>
+- Through this project, I have learned to read the data set effectively and make observations from different sections using categorical and numerical variables.<P>
+- I have also gathered the knowledge to slice the data set and compare the numerical variables to the categorical variables and plot them using appropriate graphs.<P>
+
+<P><BR><FONT SIZE=5, COLOR="#17139B"><B>BIBLIOGRAPHY</B></FONT><BR><P>
+
+- <i>Kimberly Amadeo, "Retail Sales and Its Components
+Understanding the Economy Through Retail Activity", November 27, 2020, https://www.thebalance.com/what-is-retail-sales-3305722</i></P>
+- <i>Ron Barash, "The Power of Retail Analytics", January 14, 2019, https://www.yodlee.com/data-analytics/big-data-retail-analytics</i></P>
+- <i>Alexandra Samet, "Retail trends: 2021 retail industry stats and forecasts", July 20,2021, https://www.insiderintelligence.com/insights/future-retail-trends-industry-forecast/</i></P>
+- <i>Robert I. Kabacoff, Textbook, "R in Action: Data analysis and graphics with R", Published in 2015 by Manning Publications Co.</i><P>
+- <i>Rcoder, "Barplot in R", https://r-coder.com/barplot-r/</i><P>
+- <i>Hao Zhu, 2021-02-19, Webpage, "Create Awesome HTML Table with knitr::kable and kableExtra", https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html</i><P>
+- <i>"HTML character codes", https://www.rapidtables.com/web/html/html-codes.html</i><P>
+- <i>"HTML Color Codes", https://www.rapidtables.com/web/color/html-color-codes.html</i><P>
+- <i>DataCamp, "filter: Return rows with matching conditions", https://www.rdocumentation.org/packages/dplyr/versions/0.7.8/topics/filter</i><P>
+
+<P><BR><FONT SIZE=5, COLOR="#17139B"><B>APPENDIX</B></FONT><BR><P>
+<P><FONT SIZE=3> Corresponding R Markdown file <mark>Nayak_Final_Project.Rmd</mark> is attached to this report.</FONT><P><BR>
