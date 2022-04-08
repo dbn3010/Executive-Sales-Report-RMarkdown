@@ -10,7 +10,12 @@ As a sales analyst, I will be analyzing the available data set Project6Data.xlsx
 
 Through the available data set, we would be trying to look through the major loss and profit points in across multiple divisions. For this, we will be using R to analyze the data set and plot the figures accordingly to summarize our study.
 
-This report has been written using R Markdown codes which makes it readable and deployable through the web browser.
+This report has been written using R Markdown codes which makes it readable and deployable through the web browser.  
+
+![image](https://user-images.githubusercontent.com/50405283/162533128-9a1c64a7-3136-44a7-9e73-e01d8bd19cf5.png)
+
+![image](https://user-images.githubusercontent.com/50405283/162533259-98f5d85d-eed6-4675-b48d-0a7b18ee7f3e.png)
+
 
 Remote Web Page to this report can be accessed through the below link:  
 
